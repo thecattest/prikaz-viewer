@@ -1,0 +1,56 @@
+.parent {
+
+}
+
+.root .oid {
+    /*border: 2px dotted green;*/
+    background: inherit;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+}
+
+.link {
+    margin-right: 6px;
+    font-size: 18px;
+    color: initial;
+    text-decoration: none;
+}
+
+.link:hover {
+}
+
+.expand-btn {
+    margin-right: 7px;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.oid {
+    margin-right: 6px;
+    font-size: 20px;
+    font-weight: bold;
+    border-bottom: 1px dotted blue;
+    cursor: pointer;
+}
+
+.oid-container {
+    width: 80px;
+}
+
+.oid:hover {
+    background-color: #333;
+    color: wheat;
+    /*background: burlywood;*/
+}
+
+.inner {
+    margin-left: 35px;
+}
+
+.empty {
+    font-style: italic;
+    text-decoration: line-through;
+}
