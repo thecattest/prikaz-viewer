@@ -8,81 +8,97 @@
 <body>
 
     <div id="app">
-        <input type="number" v-model:value="rootOid">
-        <dstobj :oid="rootOid" root></dstobj>
+        <input type="number" v-model:value="rootData.oid">
+        <dstobj :data="rootData" root></dstobj>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
+        Vue.component('group', {
+            props: {
+                title: {
+                    type: String,
+                    required: true
+                }
+            },
+            template: `
+            <div class="group">
+                <div class="group-title">
+                    {{ title }}
+                </div>
+                <div class="group-content">
+                    <slot></slot>
+                </div>
+            </div>
+            `
+        });
+
         Vue.component('dstobj', {
             props: {
                 root: {
                     type: Boolean,
                     default: false
                 },
-                oid: {
-                    type: Number,
-                    required: true,
-                },
-                link: {
-                    type: Number,
-                    required: false
-                },
-                str: {
-                    type: String,
-                    required: false
+                data: {
+                    type: Object,
+                    required: true
                 }
             },
             data: function() {
                 return {
-                    isExpanded: false,
-                    empty: false,
-                    inner: {}
+                    expanded: false,
+                    empty: -1,
+                    innerData: {}
                 }
             },
             template: `
             <div class="parent">
                 <div class="title" :class="rootClass">
-                    <!--span class="expand-btn">{{ expandSymbol }}</span-->
-                    <span class="oid-container">
-                        <span class="oid" @click="toggle">{{ oid }}</span>
+                    <span v-if="isObj" class="oid-container">
+                        <span class="value oid" @click="toggle">{{ data.oid }}</span>
                     </span>
-                    <span class="link">{{ link }} <i v-if="str">({{ str }})</i></span>
+                    <span v-else class="value">
+                        {{ data.value }}
+                    </span>
+                    <span v-if="!root" class="link">
+                        {{ data.link }}
+                        <i v-if="data.str"
+                           class="description" :title="data.str">
+                           ({{ shortStr }})
+                         </i>
+                     </span>
                 </div>
-                <div v-show="isExpanded" class="inner">
-                    <div class="strings">
-                        <div v-for="string in inner.strings">{{string}}</div>
-                    </div>
-                    <div class="objects">
+                <div v-if="isExpanded" class="inner">
+                    <group v-for="(objects, type) in innerData" v-if="objects.length" :title="type">
                         <dstobj
-                            v-for="obj in inner.objects"
-                            :oid="obj.oid"
-                            :link="obj.link"
-                            :str="obj.str"
+                            v-for="data in objects"
+                            :data="data"
                         ></dstobj>
-                    </div>
-                    <span v-if="!empty && !inner.objects && !inner.strings">загрузка...</span>
-                    <span v-if="empty" class="empty">пусто</span>
+                    </group>
+                    <span v-if="isLoading">загрузка...</span>
+                    <span v-if="isEmpty" class="empty">пусто</span>
                 </div>
             </div>
             `,
             methods: {
                 toggle: function() {
-                    this.isExpanded = !this.isExpanded;
-                    if (this.isExpanded && !this.empty) {
+                    if (!this.isObj) return;
+                    this.expanded = !this.expanded;
+
+                    if (this.expanded && this.empty === -1) {
                         console.log(this.oid);
-                        axios.post("/api/", {"oid": this.oid})
+                        axios.post("/api/", {"oid": this.data.oid})
                             .catch(error => console.log(error))
                             .then(response => {
                                 const data = response.data;
                                 console.log(data);
-                                this.inner = data;
-                                this.empty = !(this.inner.strings.length || this.inner.objects.length);
+                                this.innerData = data;
+                                this.empty = Object.keys(this.innerData).length === 0;
                             });
                     } else if (!this.isExpanded && this.root) {
-                        this.inner = {};
-                        this.empty = false;
+                        this.innerData = {};
+                        this.empty = -1;
                     }
                 }
             },
@@ -93,8 +109,20 @@
                 expandSymbol: function() {
                     return this.isExpanded ? "–" : "+";
                 },
-                descHref: function() {
-                    return "http://127.0.0.1:8000/descriptor/" + this.link;
+                isObj: function() {
+                    return this.data.oid !== undefined;
+                },
+                isLoading: function() {
+                    return this.isObj && this.empty === -1;
+                },
+                isEmpty: function() {
+                    return this.isObj && this.empty === 1;
+                },
+                isExpanded: function() {
+                    return this.isObj && this.expanded;
+                },
+                shortStr: function() {
+                    return this.data.str.substr(0, 30) + (this.data.str.length > 30 ? "..." : "");
                 }
             }
         });
@@ -102,7 +130,9 @@
         app = new Vue({
             el: '#app',
             data: {
-                rootOid: 102068,
+                rootData: {
+                    oid: 102068
+                }
             }
         })
     </script>

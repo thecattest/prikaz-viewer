@@ -20,29 +20,33 @@ def api():
                    "LEFT JOIN netdb_dststring t2 on t1.link = t2.src "
                    "WHERE t1.src = '%s' "
                    "AND t1.document_end = (select max(document_end) from netdb_dstobj) "
+                   "AND t2.document_end = (select max(document_end) from netdb_dststring) "
                    "AND t2.link = -3 "
                    "ORDER BY t1.link desc",
                    (oid, ))
-    # cursor.execute("SELECT link, dst "
-    #                "FROM netdb_dstobj "
-    #                "WHERE src = '%s' "
-    #                "AND document_end = (select max(document_end) from netdb_dstobj)"
-    #                "ORDER BY src desc, link desc",
-    #                (oid,))
     objects = cursor.fetchall()
-    cursor.execute("SELECT dst "
-                   "FROM netdb_dststring "
-                   "WHERE src = '%s' "
-                   "AND document_end = (select max(document_end) from netdb_dststring) "
-                   "ORDER BY src desc, link desc",
-                   (oid, ))
-    strings = cursor.fetchall()
     return jsonify({
         'objects': list(
             {'link': o[0], 'oid': o[1], 'str': o[2]} for o in objects
         ),
-        'strings': list(s[0] for s in strings)
+        'strings': get_dsts('netdb_dststring', oid),
+        'files': get_dsts('netdb_dstfile', oid),
+        'integers': get_dsts('netdb_dstint', oid),
+        'floats': get_dsts('netdb_dstfloat', oid),
     })
+
+
+def get_dsts(tablename, oid):
+    cursor.execute("SELECT t1.link, t1.dst, t2.dst "
+                   "FROM {} t1 "
+                   "LEFT JOIN netdb_dststring t2 on t1.link = t2.src "
+                   "WHERE t1.src = '%s' "
+                   "AND t1.document_end = (select max(document_end) from {}) "
+                   "AND t2.document_end = (select max(document_end) from netdb_dststring) "
+                   "ORDER BY t1.link desc".format(tablename, tablename),
+                   (oid,))
+    dsts = cursor.fetchall()
+    return list({'link': d[0], 'value': d[1], 'str': d[2]} for d in dsts)
 
 
 def root_dir():
