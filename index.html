@@ -8,7 +8,7 @@
 <body>
 
     <div id="app">
-        <input type="text" v-model:value="rootOid">
+        <input type="text" v-model:value="rootOid" placeholder="paste the id...">
         <dst :root-oid="rootOid"></dst>
     </div>
 
@@ -60,12 +60,13 @@
                 return {
                     expanded: false,
                     empty: -1,
-                    innerGroups: {}
+                    innerGroups: {},
+                    marked: false
                 }
             },
             template: `
-            <div class="parent">
-                <div class="title">
+            <div v-show="rootOid == undefined || rootOid !== ''" class="parent">
+                <div class="title" :class="markedClass">
                     <span v-if="isObj" @click="toggle" class="oid-container">
                         <div class="expand">
                             <span class="expand-symbol">{{ expandSymbol }}</span>
@@ -84,8 +85,9 @@
                            ({{ shortStr }})
                          </i>
                      </span>
+                     <input v-if="!rootOid" type="checkbox" v-model:value="marked">
                 </div>
-                <div v-if="isExpanded" class="inner">
+                <div v-show="isExpanded" class="inner">
                     <group v-for="(group, type) in innerGroups" v-if="group.length" :title="type">
                         <dst
                             v-for="dst in group"
@@ -119,7 +121,8 @@
                                 }
                                 console.log(this.empty);
                             });
-                    } else if (!this.isExpanded && this.rootOid) {
+                    }
+                    else if (!this.isExpanded && this.rootOid) {
                         this.innerGroups = {};
                         this.empty = -1;
                     }
@@ -136,6 +139,9 @@
                 }
             },
             computed: {
+                markedClass: function() {
+                    return this.marked ? "marked" : "";
+                },
                 expandSymbol: function() {
                     // return this.isExpanded ? "–" : "+";
                     return this.isExpanded ? "•" : "+";
@@ -164,7 +170,7 @@
         app = new Vue({
             el: '#app',
             data: {
-                rootOid: "102068"
+                rootOid: ""
             }
         })
     </script>

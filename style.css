@@ -7,6 +7,10 @@
     align-items: center;
 }
 
+.marked {
+    background: lightblue;
+}
+
 .value {
     margin-right: 6px;
     font-size: 18px;
