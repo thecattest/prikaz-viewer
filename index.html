@@ -20,6 +20,10 @@
                 title: {
                     type: String,
                     required: true
+                },
+                length: {
+                    type: Number,
+                    required: true
                 }
             },
             data: function() {
@@ -28,9 +32,9 @@
                 }
             },
             template: `
-            <div class="group">
+            <div class="group" v-if="length">
                 <div class="group-title" @click="toggle">
-                    {{ title }} {{ expanded ? "-" : "+" }}
+                    {{ title }} <i>({{ length }})</i> {{ expanded ? "-" : "+" }}
                 </div>
                 <div v-show="expanded" class="group-content">
                     <slot></slot>
@@ -88,7 +92,7 @@
                      <input v-if="!rootOid" type="checkbox" v-model:value="marked">
                 </div>
                 <div v-show="isExpanded" class="inner">
-                    <group v-for="(group, type) in innerGroups" v-if="group.length" :title="type">
+                    <group v-for="(group, type) in innerGroups" :length="group.length" :title="type">
                         <dst
                             v-for="dst in group"
                             :data="dst"
