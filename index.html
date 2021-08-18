@@ -8,12 +8,12 @@
 <body>
 
     <div id="app">
-        <input type="number" v-model:value="rootData.oid">
-        <dstobj :data="rootData" root></dstobj>
+        <input type="text" v-model:value="rootOid">
+        <dst :root-oid="rootOid"></dst>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="vue.js"></script>
+    <script src="axios.js"></script>
     <script>
         Vue.component('group', {
             props: {
@@ -22,46 +22,62 @@
                     required: true
                 }
             },
+            data: function() {
+                return {
+                    expanded: true
+                }
+            },
             template: `
             <div class="group">
-                <div class="group-title">
-                    {{ title }}
+                <div class="group-title" @click="toggle">
+                    {{ title }} {{ expanded ? "-" : "+" }}
                 </div>
-                <div class="group-content">
+                <div v-show="expanded" class="group-content">
                     <slot></slot>
                 </div>
             </div>
-            `
+            `,
+            methods: {
+                toggle: function() {
+                    this.expanded = !this.expanded;
+                }
+            }
         });
 
-        Vue.component('dstobj', {
+        Vue.component('dst', {
             props: {
-                root: {
-                    type: Boolean,
-                    default: false
+                rootOid: {
+                    type: String,
+                    required: false
                 },
                 data: {
                     type: Object,
-                    required: true
+                    required: false,
+                    default: function() {return {}}
                 }
             },
             data: function() {
                 return {
                     expanded: false,
                     empty: -1,
-                    innerData: {}
+                    innerGroups: {}
                 }
             },
             template: `
             <div class="parent">
-                <div class="title" :class="rootClass">
-                    <span v-if="isObj" class="oid-container">
-                        <span class="value oid" @click="toggle">{{ data.oid }}</span>
+                <div class="title">
+                    <span v-if="isObj" @click="toggle" class="oid-container">
+                        <div class="expand">
+                            <span class="expand-symbol">{{ expandSymbol }}</span>
+                        </div>
+                        <span class="value oid">
+                            {{ id }}
+                        </span>
                     </span>
                     <span v-else class="value">
                         {{ data.value }}
                     </span>
-                    <span v-if="!root" class="link">
+                    <span v-if="!rootOid" class="link">
                         {{ data.link }}
                         <i v-if="data.str"
                            class="description" :title="data.str">
@@ -70,47 +86,65 @@
                      </span>
                 </div>
                 <div v-if="isExpanded" class="inner">
-                    <group v-for="(objects, type) in innerData" v-if="objects.length" :title="type">
-                        <dstobj
-                            v-for="data in objects"
-                            :data="data"
-                        ></dstobj>
+                    <group v-for="(group, type) in innerGroups" v-if="group.length" :title="type">
+                        <dst
+                            v-for="dst in group"
+                            :data="dst"
+                        ></dst>
                     </group>
-                    <span v-if="isLoading">загрузка...</span>
-                    <span v-if="isEmpty" class="empty">пусто</span>
+                    <div v-if="isLoading" class="loading">загрузка...</div>
+                    <div v-if="isEmpty" class="empty">пусто</div>
                 </div>
             </div>
             `,
             methods: {
-                toggle: function() {
+                updateExpanded: function(expanded) {
                     if (!this.isObj) return;
-                    this.expanded = !this.expanded;
+                    this.expanded = expanded;
 
                     if (this.expanded && this.empty === -1) {
                         console.log(this.oid);
-                        axios.post("/api/", {"oid": this.data.oid})
+                        axios.post("/api/", {"oid": this.id})
                             .catch(error => console.log(error))
                             .then(response => {
                                 const data = response.data;
                                 console.log(data);
-                                this.innerData = data;
-                                this.empty = Object.keys(this.innerData).length === 0;
+                                this.innerGroups = data;
+                                this.empty = 1;
+                                for(type in this.innerGroups) {
+                                    if (this.innerGroups[type].length !== 0) {
+                                        this.empty = 0;
+                                        break
+                                    }
+                                }
+                                console.log(this.empty);
                             });
-                    } else if (!this.isExpanded && this.root) {
-                        this.innerData = {};
+                    } else if (!this.isExpanded && this.rootOid) {
+                        this.innerGroups = {};
                         this.empty = -1;
                     }
+                },
+                toggle: function() {
+                    this.updateExpanded(!this.expanded);
+                }
+            },
+            watch: {
+                rootOid: function(newRootOid) {
+                    this.updateExpanded(false);
+                    if (!newRootOid) return;
+                    this.updateExpanded(true);
                 }
             },
             computed: {
-                rootClass: function() {
-                    return this.root ? "root" : "";
-                },
                 expandSymbol: function() {
-                    return this.isExpanded ? "–" : "+";
+                    // return this.isExpanded ? "–" : "+";
+                    return this.isExpanded ? "•" : "+";
+                },
+                id: function() {
+                    return  this.data.oid || this.rootOid;
                 },
                 isObj: function() {
-                    return this.data.oid !== undefined;
+                    return this.id !== undefined;
                 },
                 isLoading: function() {
                     return this.isObj && this.empty === -1;
@@ -130,9 +164,7 @@
         app = new Vue({
             el: '#app',
             data: {
-                rootData: {
-                    oid: 102068
-                }
+                rootOid: "102068"
             }
         })
     </script>

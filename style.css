@@ -1,10 +1,5 @@
 .parent {
-
-}
-
-.root .oid {
-    /*border: 2px dotted green;*/
-    background: inherit;
+    margin: 6px 0;
 }
 
 .title {
@@ -19,12 +14,32 @@
 }
 
 .oid-container {
-    width: 80px;
+    width: 100px;
 }
 
 .oid {
     border-bottom: 1px dotted blue;
     cursor: pointer;
+}
+
+.expand {
+    background: #b8b8b8;
+    /* padding: 0 6px; */
+    border-radius: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    position: relative;
+    /* margin-right: 0; */
+    display: inline-block;
+}
+
+.expand-symbol {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .link {
@@ -35,7 +50,7 @@
 }
 
 .description {
-    cursor: pointer;
+    cursor: default;
     text-decoration: underline;
 }
 
@@ -47,6 +62,8 @@
 
 .inner {
     margin-left: 25px;
+    border-left: 2px dotted gray;
+    padding-left: 4px;
 }
 
 .empty {
@@ -54,10 +71,24 @@
     text-decoration: line-through;
 }
 
+.loading, .empty {
+    margin-top: 5px;
+}
+
+.group-title {
+    background: #ddd;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+
+.group-title:hover {
+    color: gray;
+}
+
 .group {
     margin: 5px 0;
     /*border: 1px solid gray;*/
-    padding: 8px;
-    padding-top: 0px;
+    padding: 0 8px 8px;
     border-radius: 4px;
 }

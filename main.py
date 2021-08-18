@@ -19,20 +19,22 @@ def api():
                    "FROM netdb_dstobj t1 "
                    "LEFT JOIN netdb_dststring t2 on t1.link = t2.src "
                    "WHERE t1.src = '%s' "
-                   "AND t1.document_end = (select max(document_end) from netdb_dstobj) "
-                   "AND t2.document_end = (select max(document_end) from netdb_dststring) "
+                   "AND t1.document_end = '9999-12-31 23:59:59.999999+03' "
+                   "AND t2.document_end = '9999-12-31 23:59:59.999999+03' "
                    "AND t2.link = -3 "
                    "ORDER BY t1.link desc",
                    (oid, ))
     objects = cursor.fetchall()
     return jsonify({
-        'objects': list(
+        'obj': list(
             {'link': o[0], 'oid': o[1], 'str': o[2]} for o in objects
         ),
-        'strings': get_dsts('netdb_dststring', oid),
-        'files': get_dsts('netdb_dstfile', oid),
-        'integers': get_dsts('netdb_dstint', oid),
-        'floats': get_dsts('netdb_dstfloat', oid),
+        'string': get_dsts('netdb_dststring', oid),
+        'file': get_dsts('netdb_dstfile', oid),
+        'integer': get_dsts('netdb_dstint', oid),
+        'float': get_dsts('netdb_dstfloat', oid),
+        'boolean': get_dsts('netdb_dstbool', oid),
+        'datetime': get_dsts('netdb_dstdatetime', oid),
     })
 
 
@@ -41,8 +43,9 @@ def get_dsts(tablename, oid):
                    "FROM {} t1 "
                    "LEFT JOIN netdb_dststring t2 on t1.link = t2.src "
                    "WHERE t1.src = '%s' "
-                   "AND t1.document_end = (select max(document_end) from {}) "
-                   "AND t2.document_end = (select max(document_end) from netdb_dststring) "
+                   "AND t1.document_end = '9999-12-31 23:59:59.999999+03' "
+                   "AND t2.document_end = '9999-12-31 23:59:59.999999+03' "
+                   "AND t2.link = -3 "
                    "ORDER BY t1.link desc".format(tablename, tablename),
                    (oid,))
     dsts = cursor.fetchall()
@@ -71,6 +74,11 @@ def send_css(name):
     return Response(content, mimetype="text/css")
 
 
+def send_js(name):
+    content = get_file(name).read()
+    return Response(content, mimetype="text/js")
+
+
 @app.route("/")
 def index():
     return send_html("index.html")
@@ -79,6 +87,16 @@ def index():
 @app.route("/style.css")
 def style():
     return send_css("style.css")
+
+
+@app.route("/axios.js")
+def axios():
+    return send_js("axios.js")
+
+
+@app.route("/vue.js")
+def vue():
+    return send_js("vue.js")
 
 
 def main():
