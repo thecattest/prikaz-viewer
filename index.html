@@ -69,15 +69,16 @@
                 }
             },
             template: `
-            <div v-show="rootOid == undefined || rootOid !== ''" class="parent">
+            <div v-if="rootOid === undefined || rootOid != ''" class="parent">
                 <div class="title" :class="markedClass">
                     <span v-if="isObj" @click="toggle" class="oid-container">
                         <div class="expand">
                             <span class="expand-symbol">{{ expandSymbol }}</span>
                         </div>
                         <span class="value oid">
-                            {{ id }}
+                            {{ oid }}
                         </span>
+                        <a :href="objUrl"><small><i>(view)</i></small></a>
                     </span>
                     <span v-else class="value">
                         {{ data.value }}
@@ -109,12 +110,10 @@
                     this.expanded = expanded;
 
                     if (this.expanded && this.empty === -1) {
-                        console.log(this.oid);
-                        axios.post("/api/", {"oid": this.id})
+                        axios.post("/api/", {"oid": this.oid})
                             .catch(error => console.log(error))
                             .then(response => {
                                 const data = response.data;
-                                console.log(data);
                                 this.innerGroups = data;
                                 this.empty = 1;
                                 for(type in this.innerGroups) {
@@ -123,7 +122,6 @@
                                         break
                                     }
                                 }
-                                console.log(this.empty);
                             });
                     }
                     else if (!this.isExpanded && this.rootOid) {
@@ -150,11 +148,11 @@
                     // return this.isExpanded ? "–" : "+";
                     return this.isExpanded ? "•" : "+";
                 },
-                id: function() {
+                oid: function() {
                     return  this.data.oid || this.rootOid;
                 },
                 isObj: function() {
-                    return this.id !== undefined;
+                    return this.oid !== undefined;
                 },
                 isLoading: function() {
                     return this.isObj && this.empty === -1;
@@ -167,6 +165,9 @@
                 },
                 shortStr: function() {
                     return this.data.str.substr(0, 30) + (this.data.str.length > 30 ? "..." : "");
+                },
+                objUrl: function() {
+                    return "/?oid=" + this.oid;
                 }
             }
         });
@@ -175,6 +176,52 @@
             el: '#app',
             data: {
                 rootOid: ""
+            },
+            methods: {
+                getURLParameter: function(url, param) {
+                    let additionalURL = url.split("?")[1];
+                    if (!additionalURL) return "";
+                    let additionalURLArray = additionalURL.split("&");
+                    let result = "";
+                    for(let i = 0; i < additionalURLArray.length; i++) {
+                        let pair = additionalURLArray[i];
+                        let temp = pair.split("=");
+                        let tempParam = temp[0];
+                        let tempParamVal = temp[1];
+                        if (tempParam === param) {
+                            result = tempParamVal;
+                            break;
+                        }
+                    }
+                    return result;
+                },
+                updateURLParameter: function(url, param, paramVal) {
+                    let newAdditionalURL = "";
+                    let tempArray = url.split("?");
+                    let baseURL = tempArray[0];
+                    let additionalURL = tempArray[1];
+                    let temp = "";
+                    if (additionalURL) {
+                        tempArray = additionalURL.split("&");
+                        for (let i=0; i<tempArray.length; i++){
+                            if(tempArray[i].split('=')[0] !== param) {
+                                newAdditionalURL += temp + tempArray[i];
+                                temp = "&";
+                            }
+                        }
+                    }
+
+                    let rows_txt = temp + "" + param + "=" + paramVal;
+                    return baseURL + "?" + newAdditionalURL + rows_txt;
+                }
+            },
+            watch: {
+                rootOid: function(newRootOid) {
+                    window.history.replaceState('', '', this.updateURLParameter(window.location.href, 'oid', newRootOid));
+                }
+            },
+            mounted() {
+                this.rootOid = this.getURLParameter(window.location.href, "oid");
             }
         })
     </script>
